@@ -6,7 +6,7 @@ Projection and Deconvolution using deep hierarchical and generative neural netwo
 
 First follow the install instructions below, at the bottom of the page, before following the tutorials.
 
-[CellBench](https://github.com/quon-titative-biology/examples/blob/master/scProjection_cellbench/scProjection_cellbench.md)
+[Tutorial: Deconvolution of CellBench mixtures](https://github.com/quon-titative-biology/examples/blob/master/scProjection_cellbench/scProjection_cellbench.md)
 
 
 ## Install scProjection
