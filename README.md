@@ -1,16 +1,13 @@
 # scProjection
 
-Projection and Deconvolution using deep heirarchical and generative neural network.
+Projection and Deconvolution using deep hierarchical and generative neural network. Refer to our preprint: https://www.biorxiv.org/content/10.1101/2022.04.26.489628v1
 
 ## Tutorials
 
 First follow the install instructions below, at the bottom of the page, before following the tutorials.
 
-[CellBench](https://github.com/quon-titative-biology/examples/blob/master/scAlign_paired_alignment/scAlign_kowalcyzk_et_al.md)
+[CellBench](https://github.com/quon-titative-biology/examples/blob/master/scProjection_cellbench/scProjection_cellbench.md)
 
-## Updates
-
-#### (5/23/2022) Codebase from publication made public. Need to improve user interface with method.
 
 ## Install scProjection
 ```shell
@@ -58,3 +55,7 @@ pip3 install numpy
 ## Install scProjection
 pip3 install scProjection
 ```
+
+## Updates
+
+#### (5/23/2022) Codebase from publication made public. Need to improve user interface with method.
