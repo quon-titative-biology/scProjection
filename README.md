@@ -6,7 +6,7 @@ Projection and Deconvolution using deep heirarchical and generative neural netwo
 
 First follow the install instructions below, at the bottom of the page, before following the tutorials.
 
-[cellbench](https://github.com/quon-titative-biology/examples/blob/master/scAlign_paired_alignment/scAlign_kowalcyzk_et_al.md)
+[CellBench](https://github.com/quon-titative-biology/examples/blob/master/scAlign_paired_alignment/scAlign_kowalcyzk_et_al.md)
 
 ## Updates
 
