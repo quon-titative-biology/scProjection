@@ -1,0 +1,245 @@
+Metadata-Version: 2.1
+Name: scProjection
+Version: 0.15
+Summary: Projection and Deconvolution using deep heirarchical and generative neural network.
+Home-page: https://github.com/ucdavis/quonlab/tree/master/development/deconvAllen
+Author: Nelson Johansen, Gerald Quon
+Author-email: njjohansen@ucdavis.edu, gquon@ucdavis.edu
+License: MIT
+Description: # Tutorial: Deconvolution of CellBench human lung adenocarcinoma cell line mixtures.
+        
+        This tutorial provides a guided deconvolutions of CellBench mixtures sequenced with CEL-Seq2 or SORT-Seq using a matching single cell RNA dataset sequenced with CEL-Seq.
+        
+        ## Setup Python (compatible with cluster environment)
+        
+        First we must set up a python virtual environment. Move to the directory where you want to set up the environment, then use virtualenv command. **All of the following commands in this section are performed on the command line:**
+        
+        <pre><code> virtualenv -p /usr/bin/python3 environment_name
+        </code></pre>
+        
+        Now you can freely install any packages using pip install in the activated virtual environment.
+        
+        <pre><code> pip install package_name
+        </code></pre>
+        
+        After setting up the environment, you need to activate it. Remember to activate the relevant environment every time you work on the project.
+        
+        <pre><code> source environment_name/bin/activate
+        </code></pre>
+        
+        Once you are in the virtual environment, install tensorflow version 1.15 and some other pre-reqs:
+        
+        <pre><code>pip3 install tensorflow==1.15rc2
+        pip3 install tfp-nightly
+        pip3 install sklearn
+        </code></pre>
+        
+        Now we need to install the deconvolution package:
+        <pre><code> pip3 install /share/quonlab/software/deconvolution/deconv
+        </code></pre>
+        
+        The remaining sections of this tutorial will be in R.
+        
+        ## Deconvolution goals
+        The following is a walkthrough of `<NAME>` and has been designed to provide an overview of data preprocessing, deconvolution and visualization of standard outputs. Here, our primary goals include:
+        
+        1. Preprocess both the single cell dataset and mixture dataset in `R`.  
+        2. Train `<NAME>` with and without marker genes.
+        3. Visualize cell type proportions and cell type-specific expression profiles for each mixture profile.
+        
+        ## Data preprocessing
+        The data matrices for this tutorial can be found at `/share/quonlab/wkdir/njjohans/public/cellbench/`.
+        
+        First, we perform standard scRNA preprocessing steps using the `Seurat` package. After preprocessing we reduce to the top 2,000 highly variable genes and identify marker genes for the cell types in our single cell data.
+        
+        ```R
+        library(Seurat)
+        options(stringsAsFactors=F)
+        
+        working.dir = '/share/quonlab/wkdir/njjohans/public/cellbench/'
+        
+        load(paste0(working.dir, 'raw_data/sincell_with_class.RData'))
+        load(paste0(working.dir, 'raw_data/mRNAmix_qc.RData'))
+        
+        ## Mixture data
+        colnames(sce2_qc) = paste0("CELMix-", colnames(sce2_qc))
+        colnames(sce8_qc) = paste0("SORTMix-", colnames(sce8_qc))
+        
+        ## Individual data
+        colnames(sce_sc_CELseq2_qc) = paste0("CEL-", colnames(sce_sc_CELseq2_qc))
+        
+        ## Reduce to the common genes (rows)
+        common.genes = Reduce(intersect, list(rownames(counts(sce2_qc)),
+                                                rownames(counts(sce8_qc)),
+                                                rownames(sce_sc_CELseq2_qc)))
+        
+        ## Combine data (this is optional). Single cell and mixture data can also be normalized separately.
+        cellbench_data = cbind(counts(sce2_qc)[common.genes,],
+                               counts(sce8_qc)[common.genes,],     
+                               counts(sce_sc_CELseq2_qc)[common.genes,])
+        
+        ################################################################################
+        ## Seurat combined normalization
+        ################################################################################
+        cellbenchSeuratObj <- CreateSeuratObject(counts = cellbench_data, project = "DECONV", min.cells = 1)
+        ## Batch annotation
+        cellbenchSeuratObj@meta.data$platform  = as.factor(c(rep('CELMix-seq', ncol(counts(sce2_qc))),
+                                                             rep('SORTMix-seq', ncol(counts(sce8_qc))),
+                                                             rep('CEL-seq', ncol(counts(sce_sc_CELseq2_qc)))))
+        ## Cell type annotation
+        cellbenchSeuratObj@meta.data$cell.type = as.factor(c(sce2_qc@colData$mix,
+                                                             sce8_qc@colData$mix,
+                                                             sce_sc_CELseq2_qc@colData$cell_line))
+        ## Important that log transformation is not performed during this step.
+        cellbenchSeuratObj <- NormalizeData(cellbenchSeuratObj, normalization.method="RC", scale.factor=1e4)
+        cellbenchSeuratObj <- ScaleData(cellbenchSeuratObj, do.scale=T, do.center=T, display.progress = T)
+        cellbenchSeuratObj <- FindVariableFeatures(cellbenchSeuratObj, nfeatures=2000)
+        ```
+        
+        ## Marker gene selection
+        Specification of marker genes is essential for successful deconvolution. Marker gene lists from external sources such as previous studies on the tissue of interest or methods including CIBERSORTx are typically the best starting point. Otherwise, use packages such as Seurat to identify marker genes from single cell data.
+        
+        ```R
+        ################################################################################
+        ## Marker genes
+        ################################################################################
+        marker.genes = read.table('/share/quonlab/wkdir/njjohans/public/cellbench/CEL_signature_genes.txt', sep="\t", header=T, stringsAsFactors=F)[,1]
+        
+        ## Combine variable features and marker genes.
+        VariableFeatures(cellbenchSeuratObj) = union(marker.genes, VariableFeatures(cellbenchSeuratObj))
+        
+        ## Create a binary mask for the position of markers in the gene list (optional input to our method).
+        marker_gene_mask = rep(0, length(VariableFeatures(cellbenchSeuratObj)))
+        marker_gene_mask[which(VariableFeatures(cellbenchSeuratObj) %in% marker.genes)]=1
+        ```
+        
+        ## Input overview
+        Now that we have both preprocessed scRNA and mixture data, here is a look at standard inputs:
+        1.  Single cell RNAseq data **(cells x genes)**.
+        2.  Mixture RNAseq data     **(cellx x genes)**.
+        3.  Single cell data, cell type labels **(cells x 1)**. A vector of cell type names, with no white spaces.
+        
+        and optionally:
+        
+        4.  Marker gene mask **(genes x 1)**. A binary vector where 1's indicate the position of a marker gene.
+        
+        ## Deconvolve mixture profiles with `<NAME>`!
+        
+        ```R
+        library(reticulate)
+        deconv = import("deconv")
+        source('/share/quonlab/software/deconvolution/deconvR/nnDeconvClass.R')
+        
+        ## cells x genes
+        component_data = GetAssayData(cellbenchSeuratObj, 'scale.data')[,which(cellbenchSeuratObj[["platform"]] == 'CEL-seq')]
+        component_data = t(component_data[VariableFeatures(cellbenchSeuratObj),])
+        ## cell ids for component_data, should be strings!
+        component_label = as.character(cellbenchSeuratObj[["cell.type"]][which(cellbenchSeuratObj[["platform"]] == 'CEL-seq'),1])
+        ## cells x genes
+        mixture_data = GetAssayData(cellbenchSeuratObj, 'scale.data')[,which(cellbenchSeuratObj[["platform"]] != 'CEL-seq')]
+        mixture_data = t(mixture_data[VariableFeatures(cellbenchSeuratObj),])
+        
+        ## Because we are calling Python from R we must be careful about variable type:
+        ##    as.matrix() to ensure data matrices are passed as type matrix
+        ##    as.array()  to ensure lists/vectors are passed as type array
+        ##    Integers must be followed by 'L', i.e. 100L.
+        
+        ## First we create the deconvolution model:
+        deconvModel = deconv$deconvModel(component_data   = as.matrix(component_data),
+                                         component_label  = as.array(as.character(component_label)),
+                                         mixture_data     = as.matrix(mixture_data))
+        
+        ## Now we define the network architecture and run deconvolution!
+        deconvModel$deconvolve(max_steps_component = 100L,
+                               num_latent_dims     = 64L,
+                               num_layers          = 3L,
+                               hidden_unit_2power  = 9L,
+                               batch_norm_layers   = 'True')
+        
+        ## Convert the python class to an R S4 class. check: str(deconvResults)
+        deconvResults = convertDeconv(deconvModel)
+        ```
+        
+        ## Output overview
+        The following are standard outputs stored in `deconvModel$deconvResults`:
+        
+        1.  `proportions` **(cells x celltypes)**. Each row contains the relative proportion of cell types in the corresponding mixture profile.
+        2.  `weights`     **(cellx x celltypes)**. Unnormalized (softmax) proportions.
+        3.  `deconv_data$component` **(cells x genes)**. Reconstructions of the single cell data per cell type.
+        4.  `deconv_data$purified` **(cells x genes)**. Mixture profiles purified to expression consistent with a specific cell type.
+        5.  The remaining outputs are diagnostics from training/testing used for model evaluation/selection.
+        
+        ## Visualize the results of deconvolution
+        
+        ```R
+        library(ComplexHeatmap)
+        library(circlize)
+        
+        ## In the case of CellBench we have labels on the mixture data!
+        mixture.labels = as.character(cellbenchSeuratObj[["cell.type"]][which(cellbenchSeuratObj[["platform"]] != 'CEL-seq'),1])
+        
+        ## Extract the estimated proportions from the final training step and name the cell type columns
+        proportions = deconvResults@proportions$`10000`
+        
+        ## Create an annotation for our heatmap
+        row_anno = HeatmapAnnotation(
+            mixture.type = factor(mixture.labels, levels=1:max(mixture.labels)),
+            which="row")
+        
+        ## Another way to define annotations
+        colors = c("blue", "green", "purple"); names(colors) = colnames(proportions);
+        col_anno = HeatmapAnnotation(
+            cell.type = colnames(proportions),
+            col = list(cell.type = colors),
+            which="column")
+        
+        ## Plot results
+        png(paste0("~/proportion_heatmap.png"), width=16, height=16, units='in', res=300)
+        heatmap = Heatmap(proportions,
+                          top_annotation = col_anno,
+                          col = colorRamp2(c(0, 1), c('white', 'red')),
+                          cluster_rows = T,
+                          cluster_columns = T,
+                          show_row_names = F,
+                          show_column_names = T,
+                          show_row_dend = T,
+                          show_column_dend = F,
+                          column_title = "Cell type proportions",
+                          row_title = "Mixture profiles",
+                          na_col = 'white',
+                          column_names_gp = gpar(fontsize = 24),
+                          column_title_gp = gpar(fontsize = 24),
+                          row_title_gp = gpar(fontsize = 24),
+                          column_names_max_height = unit(20, "cm"),
+                          row_dend_width = unit(3, "cm"),
+                          row_km=4,
+                          show_heatmap_legend=T,
+                          border=T) + row_anno
+        draw(heatmap)
+        dev.off()
+        ```
+        ![Proportions](https://github.com/ucdavis/quonlab/blob/master/development/deconvRelease/figures/proportion_heatmap.png)
+        
+        ## Masking to marker genes improves deconvolution
+        
+        Now lets tell the deconvolution aspect of `<NAME>` to only utilize marker genes.
+        
+        ```R
+        ## Now we define the network architecture and run deconvolution!
+        deconvModel$deconvolve(marker_gene_mask    = marker_gene_mask,
+                               max_steps_component = 100L,
+                               num_latent_dims     = 64L,
+                               num_layers          = 3L,
+                               hidden_unit_2power  = 9L,
+                               batch_norm_layers   = 'True')
+        
+        ## Convert the python class to an R S4 class. check: str(deconvResults)
+        deconvResults = convertDeconv(deconvModel)
+        ```
+        
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
