@@ -6,7 +6,11 @@ Projection and Deconvolution using deep hierarchical and generative neural netwo
 
 First follow the install instructions below, at the bottom of the page, before following the tutorials.
 
-[Tutorial: Deconvolution of CellBench mixtures](https://github.com/quon-titative-biology/examples/blob/master/scProjection_cellbench/scProjection_cellbench.md)
+[Tutorial 1: Deconvolution of CellBench mixtures](https://github.com/quon-titative-biology/examples/blob/master/scProjection_cellbench/scProjection_cellbench.md)
+
+[Tutorial 2: Deconvolution of spatial MERFISH data](https://github.com/quon-titative-biology/examples/blob/master/scProjection_spatial/MERFISH_deconv_example.md)
+
+[Tutorial 3: Deconvolution of pseudo bulk data](https://github.com/quon-titative-biology/examples/blob/master/scProjection_bulk/python_version_pseudo_bulk_deconv_example.md)
 
 
 ## Install scProjection
@@ -59,3 +63,4 @@ pip3 install scProjection
 ## Updates
 
 #### (5/23/2022) Codebase from publication made public. Need to improve user interface with method.
+#### (11/9/2022) Added more tutorials with examples running scProjection in both R and Python
