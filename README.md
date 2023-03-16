@@ -17,7 +17,7 @@ First follow the install instructions below, at the bottom of the page, before f
 ```shell
 pip3 install scProjection
 ```
-
+The install time should be less than 30 min.
 ## Package requirements
 
 scProjection requires: Python 3. This is a guide to installing python on different operating systems.
