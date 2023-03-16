@@ -10,7 +10,7 @@ First follow the install instructions below, at the bottom of the page, before f
 
 [Tutorial 2: Deconvolution of spatial MERFISH data](https://github.com/quon-titative-biology/examples/blob/master/scProjection_spatial/MERFISH_deconv_example.md)
 
-[Tutorial 3: Deconvolution of pseudo bulk data](https://github.com/quon-titative-biology/examples/blob/master/scProjection_bulk/python_version_pseudo_bulk_deconv_example.md)
+[Tutorial 3: Projection of pseudo bulk data](https://github.com/quon-titative-biology/examples/tree/master/scProjection_pseudobulk/readme.md)
 
 
 ## Install scProjection
