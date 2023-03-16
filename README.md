@@ -12,6 +12,7 @@ First follow the install instructions below, at the bottom of the page, before f
 
 [Tutorial 3: Projection of pseudo bulk data](https://github.com/quon-titative-biology/examples/tree/master/scProjection_pseudobulk/readme.md)
 
+[Tutorial 4: Imputation of gene expression patterns of spatial osmFISH data](https://github.com/quon-titative-biology/examples/blob/master/scProjection_imputation/readme.md)
 
 ## Install scProjection
 ```shell
