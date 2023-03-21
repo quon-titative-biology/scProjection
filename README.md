@@ -62,6 +62,6 @@ pip3 install scProjection
 ```
 
 ## Updates
-
+#### (3/16/2023) More tutorials have been added.
 #### (5/23/2022) Codebase from publication made public. Need to improve user interface with method.
 #### (11/9/2022) Added more tutorials with examples running scProjection in both R and Python
