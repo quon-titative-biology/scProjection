@@ -1,6 +1,6 @@
 # scProjection
 
-Projection and Deconvolution using deep hierarchical and generative neural network. Refer to our preprint: https://www.biorxiv.org/content/10.1101/2022.04.26.489628v1
+Projecting RNA measurements onto single cell atlases to achieve single cell resolution. Refer to our paper:
 
 ## Tutorials
 
