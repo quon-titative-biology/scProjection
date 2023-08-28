@@ -15,7 +15,7 @@ setuptools.setup(name='scProjection',
     install_requires=[
         'tensorflow',
         'tensorflow_probability',
-        'sklearn',
+        'sklearn-learn',
         'numpy'
       ],
     package_dir={"": "src"},
