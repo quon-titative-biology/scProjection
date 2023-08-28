@@ -1,6 +1,6 @@
 # scProjection
 
-Projecting RNA measurements onto single cell atlases to achieve single cell resolution. Refer to our paper:
+Projecting RNA measurements onto single cell atlases to extract cell type-specific expression profiles using scProjection. Refer to our paper:https://www.nature.com/articles/s41467-023-40744-6
 
 ## Tutorials
 
