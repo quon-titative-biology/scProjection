@@ -54,7 +54,7 @@ source ./pyvTf2/bin/activate
 ## Setup dependencies
 pip3 install tensorflow
 pip3 install tensorflow-probability
-pip3 install sklearn
+pip3 install scikit-learn
 pip3 install numpy
 
 ## Install scProjection
